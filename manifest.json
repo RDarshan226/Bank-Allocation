@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "Bank Allocation",
+  "short_name": "Bank Allocation",
+  "description": "Organise your bank accounts by financial purpose.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#07101d",
+  "theme_color": "#07111f",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
