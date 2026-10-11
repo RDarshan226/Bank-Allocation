@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111f">
+<meta name="description" content="Organise which bank account is used for each financial purpose.">
+<title>Bank Allocation</title>
+<style>
+:root{color-scheme:dark;--bg:#07111f;--panel:#101e30;--panel2:#15263a;--line:#263b52;--text:#edf6ff;--muted:#9bb0c7;--cyan:#48d7e8;--danger:#ff8585}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#112844 0,#07111f 58%);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+header{padding:28px 18px 18px;max-width:1000px;margin:auto}h1{margin:0;font-size:clamp(1.65rem,5vw,2.3rem);letter-spacing:-.04em}header p{margin:6px 0 0;color:var(--muted)}main{max-width:1000px;margin:auto;padding:0 18px 40px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 20px}.toolbar input{flex:1;min-width:180px}
+input,select,textarea,button{font:inherit}input,select,textarea{width:100%;background:#091626;border:1px solid var(--line);border-radius:11px;padding:12px;color:var(--text);outline:none}input:focus,select:focus,textarea:focus{border-color:var(--cyan)}button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:11px 15px;cursor:pointer}button.primary{background:var(--cyan);border-color:var(--cyan);color:#03202a;font-weight:750}button.danger{color:var(--danger)}button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px}.stat,.card,.formpanel{background:linear-gradient(145deg,#12243a,#0c1929);border:1px solid var(--line);border-radius:16px}.stat{padding:15px}.stat strong{display:block;font-size:1.55rem}.stat span{color:var(--muted);font-size:.88rem}.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,1fr);gap:16px;align-items:start}.sectionhead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px}.sectionhead h2,.formpanel h2{font-size:1.1rem;margin:0}.cards{display:grid;gap:10px}.card{padding:16px}.cardtop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.bank{font-weight:750;font-size:1.05rem;overflow-wrap:anywhere}.purpose{display:inline-block;margin-top:8px;padding:4px 9px;border-radius:99px;background:#123847;color:#7ceafa;font-size:.82rem}.notes{color:var(--muted);font-size:.9rem;margin:10px 0 0;white-space:pre-wrap}.actions{display:flex;gap:7px;flex-wrap:wrap}.actions button{font-size:.86rem;padding:7px 10px}.formpanel{padding:17px}.formpanel label{display:block;font-size:.9rem;color:var(--muted);margin:13px 0 6px}.formpanel label:first-of-type{margin-top:16px}.formactions{display:flex;gap:8px;margin-top:16px}.formactions button{flex:1}.empty{border:1px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--muted)}footer{max-width:1000px;margin:auto;padding:0 18px 24px;color:var(--muted);font-size:.82rem}.status{min-height:1.3em;color:var(--cyan);font-size:.88rem;margin-top:10px}
+@media(max-width:720px){.layout{grid-template-columns:1fr}.summary{gap:8px}.stat{padding:12px}.stat strong{font-size:1.3rem}.toolbar button{flex:1}.formpanel{order:-1}}
+@media(prefers-reduced-motion:no-preference){.card,.stat{animation:appear .22s ease-out}@keyframes appear{from{opacity:.65;transform:translateY(3px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bank Allocation</h1>
+  <p>A simple dashboard for assigning a bank account to each financial purpose.</p>
+</header>
+<main>
+  <section class="summary" aria-label="Allocation summary">
+    <div class="stat"><strong id="totalCount">0</strong><span>Bank accounts</span></div>
+    <div class="stat"><strong id="purposeCount">0</strong><span>Purposes covered</span></div>
+    <div class="stat"><strong id="unassignedCount">0</strong><span>Unassigned accounts</span></div>
+  </section>
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="Search banks, purposes or notes…" aria-label="Search allocations">
+    <button id="exportBtn" type="button">Export JSON</button>
+    <button id="importBtn" type="button">Import JSON</button>
+    <input id="importFile" type="file" accept="application/json,.json" hidden>
+  </div>
+  <div class="layout">
+    <section>
+      <div class="sectionhead"><h2>Your allocations</h2><button class="primary" id="newBtn" type="button">+ Add account</button></div>
+      <div class="cards" id="cards" aria-live="polite"></div>
+    </section>
+    <aside class="formpanel" id="editor">
+      <h2 id="formTitle">Add bank allocation</h2>
+      <form id="allocationForm">
+        <label for="bank">Bank / account name</label>
+        <input id="bank" name="bank" maxlength="80" placeholder="e.g. Kotak 811" required>
+        <label for="purpose">Assigned purpose</label>
+        <input id="purpose" name="purpose" maxlength="80" list="purposeOptions" placeholder="e.g. Card payments" required>
+        <datalist id="purposeOptions">
+          <option value="Backup"><option value="Insurance"><option value="Card payments"><option value="Credit Card bills"><option value="Travel"><option value="Distribution"><option value="Investment">
+        </datalist>
+        <label for="notes">Notes (optional)</label>
+        <textarea id="notes" name="notes" rows="3" maxlength="500" placeholder="Any rules or reminders for this account"></textarea>
+        <div class="formactions"><button class="primary" type="submit">Save allocation</button><button id="cancelBtn" type="button">Cancel</button></div>
+        <div class="status" id="status" role="status"></div>
+      </form>
+    </aside>
+  </div>
+</main>
+<footer>Version 1.0 · Data is stored in this browser on this device. Use Export JSON for a backup; this starter does not sync data to a bank or cloud service.</footer>
+<script>
+(function(){
+'use strict';
+const KEY='bank-allocation-v1';
+const starter=[
+ {id:'pnb-backup',bank:'Punjab National Bank',purpose:'Backup',notes:''},
+ {id:'karnataka-insurance',bank:'Karnataka Bank',purpose:'Insurance',notes:''},
+ {id:'kotak-card-payments',bank:'Kotak 811',purpose:'Card payments',notes:''},
+ {id:'slice-card-bills',bank:'Slice',purpose:'Credit Card bills',notes:''},
+ {id:'idfc-travel',bank:'IDFC',purpose:'Travel',notes:''},
+ {id:'union-distribution',bank:'Union Bank',purpose:'Distribution',notes:''},
+ {id:'au-investment',bank:'AU',purpose:'Investment',notes:''}
+];
+const $=id=>document.getElementById(id);
+let records=[],editingId=null;
+function uid(){return 'bank-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
+function safeLoad(){try{const raw=localStorage.getItem(KEY);if(raw===null)return starter.map(x=>({...x}));const parsed=JSON.parse(raw);return Array.isArray(parsed)?parsed.filter(x=>x&&typeof x.bank==='string'&&typeof x.purpose==='string').map(x=>({id:String(x.id||uid()),bank:x.bank,purpose:x.purpose,notes:String(x.notes||'')})):starter.map(x=>({...x}));}catch(e){return starter.map(x=>({...x}))}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(records));$('status').textContent='Saved on this device.'}catch(e){$('status').textContent='Could not save locally. Export a backup before leaving.'}}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){
+ const q=$('search').value.trim().toLowerCase();
+ const visible=records.filter(r=>(r.bank+' '+r.purpose+' '+r.notes).toLowerCase().includes(q));
+ $('totalCount').textContent=records.length;
+ $('purposeCount').textContent=new Set(records.map(r=>r.purpose.trim().toLowerCase()).filter(Boolean)).size;
+ $('unassignedCount').textContent=records.filter(r=>!r.purpose.trim()).length;
+ $('cards').innerHTML=visible.length?visible.map(r=>'<article class="card"><div class="cardtop"><div><div class="bank">'+esc(r.bank)+'</div><span class="purpose">'+esc(r.purpose||'Unassigned')+'</span></div><div class="actions"><button type="button" data-edit="'+esc(r.id)+'" aria-label="Edit '+esc(r.bank)+'">Edit</button><button type="button" class="danger" data-delete="'+esc(r.id)+'" aria-label="Delete '+esc(r.bank)+'">Delete</button></div></div>'+(r.notes?'<p class="notes">'+esc(r.notes)+'</p>':'')+'</article>').join(''):'<div class="empty">'+(q?'No matching allocations.':'No allocations yet. Add a bank account to begin.')+'</div>';
+}
+function resetForm(){editingId=null;$('allocationForm').reset();$('formTitle').textContent='Add bank allocation';$('status').textContent=''}
+function edit(id){const r=records.find(x=>x.id===id);if(!r)return;editingId=id;$('bank').value=r.bank;$('purpose').value=r.purpose;$('notes').value=r.notes;$('formTitle').textContent='Edit bank allocation';$('status').textContent='';$('bank').focus();$('editor').scrollIntoView({behavior:'smooth',block:'start'})}
+$('allocationForm').addEventListener('submit',e=>{e.preventDefault();const bank=$('bank').value.trim(),purpose=$('purpose').value.trim(),notes=$('notes').value.trim();if(!bank||!purpose)return;const duplicate=records.some(r=>r.id!==editingId&&r.bank.trim().toLowerCase()===bank.toLowerCase());if(duplicate&&!confirm('An account with this name already exists. Save another entry anyway?'))return;if(editingId){records=records.map(r=>r.id===editingId?{...r,bank,purpose,notes}:r)}else{records.push({id:uid(),bank,purpose,notes})}save();render();resetForm()});
+$('cards').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.edit)edit(b.dataset.edit);if(b.dataset.delete){const r=records.find(x=>x.id===b.dataset.delete);if(r&&confirm('Delete the allocation for '+r.bank+'?')){records=records.filter(x=>x.id!==b.dataset.delete);save();render();if(editingId===b.dataset.delete)resetForm()}}});
+$('newBtn').addEventListener('click',()=>{resetForm();$('bank').focus();$('editor').scrollIntoView({behavior:'smooth',block:'start'})});
+$('cancelBtn').addEventListener('click',resetForm);
+$('search').addEventListener('input',render);
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({app:'Bank Allocation',version:1,exportedAt:new Date().toISOString(),allocations:records},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='bank-allocation-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+$('importBtn').addEventListener('click',()=>$('importFile').click());
+$('importFile').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text());const list=Array.isArray(data)?data:data.allocations;if(!Array.isArray(list))throw new Error('Expected an allocations array');const cleaned=list.map(r=>{if(!r||typeof r.bank!=='string'||typeof r.purpose!=='string')throw new Error('Each entry needs a bank and purpose');return{id:uid(),bank:r.bank.trim().slice(0,80),purpose:r.purpose.trim().slice(0,80),notes:String(r.notes||'').slice(0,500)}}).filter(r=>r.bank&&r.purpose);if(!confirm('Replace current allocations with '+cleaned.length+' imported entries? Export a backup first if needed.'))return;records=cleaned;save();render();resetForm();$('status').textContent='Import complete.'}catch(err){alert('Import failed: '+err.message)}finally{e.target.value=''}});
+records=safeLoad();render();
+})();
+</script>
+</body>
+</html>
