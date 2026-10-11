@@ -99,6 +99,7 @@ $('importBtn').addEventListener('click',()=>$('importFile').click());
 $('importFile').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text()),list=Array.isArray(data)?data:data.allocations;if(!Array.isArray(list))throw new Error('Expected an allocations array');const cleaned=list.map(r=>{if(!r||typeof r.bank!=='string')throw new Error('Each entry needs a bank name');return{id:uid(),bank:r.bank.trim().slice(0,80),purpose:String(r.purpose||'Unallocated').trim().slice(0,80)||'Unallocated',notes:String(r.notes||'').slice(0,500)}}).filter(r=>r.bank);if(!confirm('Replace current allocations with '+cleaned.length+' imported entries?'))return;records=cleaned;save();render();resetForm();$('status').textContent='✓ Import complete.'}catch(err){alert('Import failed: '+err.message)}finally{e.target.value=''}});
 $('resetBtn').addEventListener('click',()=>{if(confirm('Restore the exact 11-account starter list? This replaces the current list. Export a backup first if needed.')){records=cloneStarter();save();render();resetForm();$('status').textContent='✓ Starter list restored.'}});
 records=load();render();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) { window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Offline support unavailable:',err))); }
 })();
 </script>
 </body>
