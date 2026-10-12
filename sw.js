@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bank-allocation-v1.1.12';
+const CACHE_NAME = 'bank-allocation-v1.1.13';
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
@@ -8,6 +8,15 @@ self.addEventListener('activate', event => {
 });
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
+  const requestUrl = new URL(event.request.url);
+  const isPage = event.request.mode === 'navigate' || requestUrl.pathname.endsWith('/index.html') || requestUrl.pathname.endsWith('/Bank-Allocation/');
+  if (isPage) {
+    event.respondWith(fetch(event.request).then(response => {
+      if (response && response.ok) caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+      return response;
+    }).catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html'))));
+    return;
+  }
   event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
     if (response && response.ok) { const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)); }
     return response;
